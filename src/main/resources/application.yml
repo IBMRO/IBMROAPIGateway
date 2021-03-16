@@ -1,0 +1,99 @@
+server:
+  port: 9082
+  
+  
+#Enabling HTTPS
+  ssl:
+# The format used for the keystore. It could be set to JKS in case it is a JKS file  
+    key-store-type: PKCS12
+    key-store: classpath:keystore/roapigateway.p12
+    key-store-password: roapigateway #This should be externalized and should come from valut/encrypted using SpringCloudConfgiServer
+    key-alias: roapigateway
+    enabled: true
+    
+    
+    
+spring:
+  application:
+    name: ibmro-api-gateway
+  cloud:
+    gateway:
+      routes:
+      #USER SERVICE ROUTES
+      - id: ibmro-users-service-getusers
+        uri: lb://ibmro-users-service
+        predicates:
+        - Path=/users/{segment}
+        - Method=GET
+        filters:
+        - RemoveRequestHeader=Cookie
+        - JWTAuthorizationFilter
+        
+      - id: ibmro-users-service-postusers
+        uri: lb://ibmro-users-service
+        predicates:
+        - Path=/users
+        - Method=POST
+        
+      - id: ibmro-users-service-login
+        uri: lb://ibmro-users-service
+        predicates:
+        - Path=/users/login
+        - Method=POST
+        filters:
+        - RemoveRequestHeader=Cookie
+        
+      - id: ibmro-users-service-refreshtoken
+        uri: lb://ibmro-users-service
+        predicates:
+        - Path=/users/refreshtoken
+        - Method=POST
+        filters:
+        - JWTAuthorizationFilter
+        
+      - id: ibmro-users-service-deleteusers
+        uri: lb://ibmro-users-service
+        predicates:
+        - Path=/users/{segment}
+        - Method=DELETE
+        filters:
+        - JWTAuthorizationFilter
+        
+        
+      #GROUPS SERVICE ROUTES
+      - id: ibmro-groups-service-version
+        uri: lb://ibmro-groups-service
+        predicates:
+        - Path=/groups/version
+        - Method=GET
+        filters:
+        - JWTAuthorizationFilter
+        
+      - id: ibmro-groups-service-postgroups
+        uri: lb://ibmro-groups-service
+        predicates:
+        - Path=/groups
+        - Method=POST
+        filters:
+        - JWTAuthorizationFilter
+        
+        
+    
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8010/eureka
+  instance:
+    instance-id: ${spring.application.name}:${spring.application.instance-id:${random.value}}
+    
+management:
+  endpoint:
+    gateway:
+      enabled: true
+
+
+token:
+  secret: abcdlkjlkiii22399ikasjfd09099999asldasdfee2222
+  expiration_time: 900000
+  
+  
